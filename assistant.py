@@ -1,3 +1,4 @@
+import os
 from livekit.agents import (
     Agent,
     AgentSession,
@@ -10,6 +11,7 @@ from livekit.agents import (
 from livekit.plugins import groq, silero, elevenlabs
 from dotenv import load_dotenv
 
+# Load environment variables
 load_dotenv(dotenv_path=".env.local")
 
 @function_tool
@@ -18,9 +20,7 @@ async def lookup_weather(
     location: str,
 ):
     """Used to look up weather information."""
-    
     return {"weather": "sunny", "temperature": 70}
-
 
 async def entrypoint(ctx: JobContext):
     await ctx.connect()
@@ -34,6 +34,7 @@ async def entrypoint(ctx: JobContext):
             """,
         tools=[lookup_weather],
     )
+    
     session = AgentSession(
         vad=silero.VAD.load(),
         # Using Groq for STT and LLM, ElevenLabs for TTS
@@ -49,4 +50,10 @@ async def entrypoint(ctx: JobContext):
     await session.generate_reply(instructions="Say hello, then ask the user how their day is going and how you can help.")
 
 if __name__ == "__main__":
-    cli.run_app(WorkerOptions(entrypoint_fnc=entrypoint))
+    # Configure worker options for Railway
+    worker_options = WorkerOptions(
+        entrypoint_fnc=entrypoint,
+        # Set port from environment variable (Railway provides this)
+        port=int(os.environ.get("PORT", 8080))
+    )
+    cli.run_app(worker_options)
