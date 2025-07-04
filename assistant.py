@@ -7,8 +7,7 @@ from livekit.agents import (
     cli,
     function_tool,
 )
-from livekit.plugins import groq, silero
-
+from livekit.plugins import groq, silero, elevenlabs
 from dotenv import load_dotenv
 
 load_dotenv(dotenv_path=".env.local")
@@ -19,7 +18,7 @@ async def lookup_weather(
     location: str,
 ):
     """Used to look up weather information."""
-
+    
     return {"weather": "sunny", "temperature": 70}
 
 
@@ -37,10 +36,13 @@ async def entrypoint(ctx: JobContext):
     )
     session = AgentSession(
         vad=silero.VAD.load(),
-        # any combination of STT, LLM, TTS, or realtime API can be used
-        stt=groq.STT(),  
+        # Using Groq for STT and LLM, ElevenLabs for TTS
+        stt=groq.STT(),
         llm=groq.LLM(model="llama-3.3-70b-versatile"),
-        tts=groq.TTS(model="playai-tts"), 
+        tts=elevenlabs.TTS(
+            voice_id="EXAVITQu4vr4xnSDxMaL",  # Bella voice ID
+            model="eleven_turbo_v2_5"
+        ),
     )
 
     await session.start(agent=agent, room=ctx.room)
